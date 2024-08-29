@@ -1,0 +1,28 @@
+services:
+  qr-api:
+    build:
+      context: ./qr-api
+      dockerfile: Dockerfile
+    container_name: qr-api
+    ports:
+      - "8000:8000"
+    environment:
+      S3_ENDPOINT: minio
+      S3_PORT: 9000
+      S3_USER: qrtest 
+      S3_PASS: simplepass
+      S3_BUCKET: qr-bucket
+  minio:
+    image: bitnami/minio:latest
+    container_name: minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - "minio_data:/data"
+    environment:
+      MINIO_ROOT_USER: qrtest 
+      MINIO_ROOT_PASSWORD: simplepass
+      MINIO_DEFAULT_BUCKETS: qr-bucket
+volumes:
+  minio_data:
