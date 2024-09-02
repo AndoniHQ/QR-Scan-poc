@@ -16,6 +16,6 @@ WORKDIR /app
 COPY --from=base /tmp/requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 
-COPY main.py ./
+COPY ./src /app
 
-CMD ["fastapi", "run"]
+CMD ["python", "main.py"]

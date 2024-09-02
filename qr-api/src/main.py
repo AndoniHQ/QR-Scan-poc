@@ -1,30 +1,17 @@
 import cv2
-import os
 import numpy as np
-import boto3
+import uvicorn
 
 from io import BytesIO
-from botocore.client import Config
 from fastapi import FastAPI, File, UploadFile, HTTPException, status
+from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.responses import StreamingResponse
 from pyzbar.pyzbar import decode
-
-S3_ENDPOINT = os.environ.get("S3_ENDPOINT")
-S3_PORT = os.environ.get("S3_PORT")
-S3_USER = os.environ.get("S3_USER")
-S3_PASS = os.environ.get("S3_PASS")
-S3_BUCKET = os.environ.get("S3_BUCKET")
-
-s3_client = boto3.client(
-    's3',
-    endpoint_url=f"http://{S3_ENDPOINT}:{S3_PORT}",
-    aws_access_key_id=S3_USER,
-    aws_secret_access_key=S3_PASS,
-    config=Config(signature_version='s3v4'),
-    region_name='us-east-1'
-)
+from config import s3_client, S3_BUCKET
+from middleware import log_middleware
 
 app = FastAPI()
+app.add_middleware(BaseHTTPMiddleware, dispatch=log_middleware)
 
 @app.get("/health")
 async def health_check():
@@ -64,3 +51,12 @@ async def get_image(barcode: str):
     
     except s3_client.exceptions.NoSuchKey:
         return {"message": "Image not found"}
+    
+if __name__ == "__main__":
+    uvicorn.run(
+        app, 
+        host="0.0.0.0", 
+        port=8000, 
+        proxy_headers=True,
+        forwarded_allow_ips='*',
+        access_log=False)
